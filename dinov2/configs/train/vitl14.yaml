@@ -8,6 +8,7 @@ train:
   batch_size_per_gpu: 32
   dataset_path: ImageNet22k
   centering: sinkhorn_knopp
+  sampler_type: SHARDED_INFINITE
 student:
   arch: vit_large
   patch_size: 14
@@ -17,7 +18,7 @@ student:
 teacher:
   momentum_teacher: 0.994
 optim:
-  epochs: 500
+  epochs: 50
   weight_decay_end: 0.2
   base_lr: 2.0e-04  # learning rate for a batch size of 1024
   warmup_epochs: 80

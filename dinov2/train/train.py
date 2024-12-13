@@ -1,3 +1,4 @@
+# --- FILE: train/train.py ---
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the Apache License, Version 2.0
@@ -95,7 +96,7 @@ def build_schedulers(cfg):
     teacher_temp_schedule = CosineScheduler(**teacher_temp)
     last_layer_lr_schedule = CosineScheduler(**lr)
 
-    last_layer_lr_schedule.schedule[
+    last_layer_lr_schedule[
         : cfg.optim["freeze_last_layer_epochs"] * OFFICIAL_EPOCH_LENGTH
     ] = 0  # mimicking the original schedules
 
@@ -188,9 +189,7 @@ def do_train(cfg, model, resume=False):
         mask_generator=mask_generator,
         dtype=inputs_dtype,
     )
-
     # setup data loader
-
     dataset = make_dataset(
         dataset_str=cfg.train.dataset_path,
         transform=data_transform,

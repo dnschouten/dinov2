@@ -1,18 +1,17 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-#
-# This source code is licensed under the Apache License, Version 2.0
-# found in the LICENSE file in the root directory of this source tree.
+# --- FILE: data/loaders.py ---
 
 import logging
 from enum import Enum
 from typing import Any, Callable, List, Optional, TypeVar
+import os
+import random
 
 import torch
-from torch.utils.data import Sampler
-
+from torch.utils.data import Sampler, Dataset
+from PIL import Image
 from .datasets import ImageNet, ImageNet22k
 from .samplers import EpochSampler, InfiniteSampler, ShardedInfiniteSampler
-
+from torchvision import transforms
 
 logger = logging.getLogger("dinov2")
 
@@ -58,6 +57,8 @@ def _parse_dataset_str(dataset_str: str):
             kwargs["split"] = ImageNet.Split[kwargs["split"]]
     elif name == "ImageNet22k":
         class_ = ImageNet22k
+    elif name == "PatchDir":  # <-- New dataset string
+        class_ = PatchDirDataset
     else:
         raise ValueError(f'Unsupported dataset "{name}"')
 
@@ -220,3 +221,34 @@ def make_data_loader(
     except TypeError:  # data loader has no length
         logger.info("infinite data loader")
     return data_loader
+
+
+class PatchDirDataset(Dataset):
+    def __init__(
+        self,
+        *,
+        root: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+    ):
+        self.root = root
+        self.transform = transform
+        self.target_transform = target_transform
+        self.image_paths = [os.path.join(root, filename) for filename in os.listdir(root) if filename.lower().endswith(".jpg")]
+        if not self.image_paths:
+            raise ValueError(f"No JPG files found in {root}")
+        
+    def __len__(self) -> int:
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+        image = Image.open(image_path).convert("RGB")
+
+        if self.transform:
+            image = self.transform(image)
+
+        target = None
+        if self.target_transform:
+             target = self.target_transform(target)
+        return image, target
